@@ -1,0 +1,9 @@
+{
+  "name": "Automatic_Backups",
+  "description": "Automatically backs-up your save files every time you save. Allows you to recover from disaster!",
+  "version_number": "1.0.0-beta",
+  "dependencies": [
+    "LavaGang-MelonLoader-0.7.0"
+  ],
+  "website_url": "https://github.com/coderTrevor/Automatic_Backups"
+}

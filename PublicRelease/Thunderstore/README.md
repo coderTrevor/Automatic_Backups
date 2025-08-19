@@ -1,10 +1,10 @@
 # Automatic Backups For Schedule I
-Mod for the game `Schedule I` that automatically backs-up your save files every time you save.  
+Automatically backs-up your save files every time you save.  
   
 Allows you to recover from disaster!
   
 
-There are builds for both the main (IL2Cpp) and alternate (Mono) branches of the game.
+There are builds for both the main (IL2cpp) and alternate (Mono) branches of the game.
   
 # Installation
 1. Requires [MelonLoader](https://melonwiki.xyz/), so install that if you haven't already.
