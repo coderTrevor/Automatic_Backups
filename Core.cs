@@ -1,9 +1,17 @@
 ﻿using MelonLoader;
-using ScheduleOne.Persistence;
-using ScheduleOne.UI.MainMenu;
 using HarmonyLib;
 
-[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.0.0", "Trevor", null)]
+#if IL2CPP
+using Il2CppScheduleOne.Persistence;
+using Il2CppScheduleOne.UI.MainMenu;
+#elif MONO
+using ScheduleOne.Persistence;
+using ScheduleOne.UI.MainMenu;
+#else
+    // Other configs could go here
+#endif
+
+[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.0.0-beta", "coderTrevor", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace AutomaticBackups
@@ -40,7 +48,7 @@ namespace AutomaticBackups
                 var backupDest = Path.Combine(backupDir, timestamp + ".zip");
                 SaveExportButton.ZipSaveFolder(saveFolderPath, backupDest);
 
-                Core.logger.Msg($"Exported {saveFolderPath} to {backupDest}");
+                Core.logger.Msg($"Exported\n{saveFolderPath} to\n{backupDest}");
             }
         }
     }
