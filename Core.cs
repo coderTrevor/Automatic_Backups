@@ -23,8 +23,20 @@ namespace AutomaticBackups
     public class Core : MelonMod
     {
         public static MelonLogger.Instance logger;
+
+        // Auto-delete settings
         public static MelonPreferences_Entry<bool> enableAutoDelete;
+        public static MelonPreferences_Entry<int> autoDeleteRetentionCount;
+        public const int DEFAULT_RETENTION_COUNT = 125;
         private MelonPreferences_Category autoDeleteCategory;
+
+        // These are only used as constants in the code, but we can still let advanced users edit their values in MelonPreferences.cfg
+        public const int RETENTION_SLIDER_MULTIPLIER = 5;
+        public const int RETENTION_SLIDER_MIN_FILES = 25;
+        public const int RETENTION_SLIDER_MAX_FILES = 250;
+        public static MelonPreferences_Entry<int> retentionSliderMultiplier;
+        public static MelonPreferences_Entry<int> retentionSliderMinFiles;
+        public static MelonPreferences_Entry<int> retentionSliderMaxFiles;
 
         public override void OnInitializeMelon()
         {
@@ -33,6 +45,10 @@ namespace AutomaticBackups
             // Create our preferences
             autoDeleteCategory = MelonPreferences.CreateCategory("AutoDeleteCategory");
             enableAutoDelete = autoDeleteCategory.CreateEntry<bool>("EnableAutoDelete", false);
+            retentionSliderMultiplier = autoDeleteCategory.CreateEntry<int>("RetentionSliderMultiplier", RETENTION_SLIDER_MULTIPLIER);
+            retentionSliderMinFiles = autoDeleteCategory.CreateEntry<int>("RetentionSliderMinFiles", RETENTION_SLIDER_MIN_FILES);
+            retentionSliderMaxFiles = autoDeleteCategory.CreateEntry<int>("RetentionSliderMaxFiles", RETENTION_SLIDER_MAX_FILES);
+            autoDeleteRetentionCount = autoDeleteCategory.CreateEntry<int>("AutoDeleteRetentionCount", DEFAULT_RETENTION_COUNT);
 
             logger.Msg("Automatic Backups Initialized.");
         }

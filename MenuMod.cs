@@ -75,7 +75,7 @@ namespace AutomaticBackups
             Transform retentionSlider = SetupRetentionSlider(modSettingsPanel);
             Transform deleteOldestToggle = SetupDeleteOldestToggle(modSettingsPanel);
 
-            // Remove all the cloned controls we don't care about
+            // Remove all the other cloned controls we don't care about
             deleteOldestToggle.SetParent(null);
             retentionSlider.SetParent(null);
             DestroyAllChildren(modSettingsPanel);
@@ -123,10 +123,7 @@ namespace AutomaticBackups
             // Remove the SensitivitySlider component
             Destroy(slider.GetComponent<SensitivitySlider>());
 
-            slider.gameObject.AddComponent<SettingsSlider>();
-            Slider sliderComponent = slider.GetComponent<Slider>();
-            sliderComponent.minValue = 15;
-            sliderComponent.maxValue = 1000;
+            slider.gameObject.AddComponent<RetentionAmountSlider>();
 
             return sensitivity;
         }

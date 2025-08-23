@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
@@ -946,6 +946,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="RetentionAmountSlider.cs" />
 		<Compile Include="MenuMod.cs" />
 		<Compile Include="DeleteOldestToggle.cs" />
 		<Compile Include="Core.cs" />
