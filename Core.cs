@@ -3,6 +3,7 @@ using HarmonyLib;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using ScheduleOne.UI.Settings;
 
 #if IL2CPP
 using Il2CppScheduleOne.Persistence;
@@ -14,7 +15,7 @@ using ScheduleOne.UI.MainMenu;
     // Other configs could go here
 #endif
 
-[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.0.0-beta", "coderTrevor", null)]
+[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.0.1-beta", "coderTrevor", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace AutomaticBackups
@@ -22,9 +23,17 @@ namespace AutomaticBackups
     public class Core : MelonMod
     {
         public static MelonLogger.Instance logger;
+        public static MelonPreferences_Entry<bool> enableAutoDelete;
+        private MelonPreferences_Category autoDeleteCategory;
+
         public override void OnInitializeMelon()
         {
             logger = LoggerInstance;
+
+            // Create our preferences
+            autoDeleteCategory = MelonPreferences.CreateCategory("AutoDeleteCategory");
+            enableAutoDelete = autoDeleteCategory.CreateEntry<bool>("EnableAutoDelete", false);
+
             logger.Msg("Automatic Backups Initialized.");
         }
 
@@ -38,7 +47,7 @@ namespace AutomaticBackups
             // We only care about the Menu scene
             if (sceneName != "Menu")
                 return;
-            
+
             // Add our MenuMod MonoBehavior to the MainMenu object
             GameObject mainMenu = GameObject.Find("MainMenu");
             mainMenu.AddComponent<MenuMod>();            
@@ -126,7 +135,81 @@ namespace AutomaticBackups
             // Update the panel clone
             modSettingsPanel.name = "Backups";
 
+            // Setup our controls
+            Transform retentionSlider = SetupRetentionSlider(modSettingsPanel);
+            Transform deleteOldestToggle = SetupDeleteOldestToggle(modSettingsPanel);
+
+            // Remove all the cloned controls we don't care about
+            deleteOldestToggle.SetParent(null);
+            retentionSlider.SetParent(null);
+            DestroyAllChildren(modSettingsPanel);
+            deleteOldestToggle.SetParent(modSettingsPanel);
+            retentionSlider.SetParent(modSettingsPanel);
+
             return modSettingsPanel.gameObject;
+        }
+
+        // Finds the "invertY" toggle we cloned from the Controls panel and repurposes it to toggle the option to delete oldest saves
+        Transform SetupDeleteOldestToggle(Transform settingsPanel)
+        {
+            Transform invertY = settingsPanel.Find("InvertY");
+            invertY.name = "DeleteOldSaves";
+            HorizontalLayoutGroup hlg = invertY.gameObject.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 25;
+
+            SetLabelText(invertY, "Delete oldest saves");
+
+            Transform toggle = invertY.Find("Toggle");
+            toggle.SetAsFirstSibling();
+            Toggle toggleComponent = toggle.GetComponent<Toggle>();
+            toggleComponent.isOn = Core.enableAutoDelete.Value;
+            
+            // Replace the invertY component with our DeleteOldestToggle component
+            Destroy(toggle.GetComponent<InvertYToggle>());
+            toggle.gameObject.AddComponent<DeleteOldestToggle>();
+
+            return invertY;
+        }
+
+        // Finds the mouse sensitivity slider we cloned from the Controls panel and repurposes it to control the number of files to back up
+        Transform SetupRetentionSlider(Transform settingsPanel)
+        {
+            Transform sensitivity = settingsPanel.Find("Sensitivity");
+            sensitivity.name = "RetainedCount";
+            
+            // Ensure the GameObject is active so DeleteOldToggle can find it
+            sensitivity.gameObject.SetActive(true);
+
+            SetLabelText(sensitivity, "Max Files Per Save Slot");
+
+            Transform slider = sensitivity.Find("Slider");
+
+            // Remove the SensitivitySlider component
+            Destroy(slider.GetComponent<SensitivitySlider>());
+
+            slider.gameObject.AddComponent<SettingsSlider>();
+            Slider sliderComponent = slider.GetComponent<Slider>();
+            sliderComponent.minValue = 15;
+            sliderComponent.maxValue = 1000;
+
+            return sensitivity;
+        }
+
+        // Given a Transform with a child named Label with a TMPro_Text component, update the label
+        void SetLabelText(Transform parent, string text)
+        {
+            Transform label = parent.Find("Label");
+            label.GetComponent<TMP_Text>().text = text;
+        }
+
+        // Destroys all children of a given Transform
+        void DestroyAllChildren(Transform parent)
+        {
+            // Iterate backwards to avoid issues while modifying the hierarchy
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Destroy(parent.GetChild(i).gameObject);
+            }
         }
 
         // Add a tab to the settings display with our mod's settings
@@ -151,6 +234,27 @@ namespace AutomaticBackups
             {
                 GameObject.FindAnyObjectByType<SettingsScreen>().ShowCategory(lastCategoryIndex);
             });
+        }
+    }
+
+    public class DeleteOldestToggle : SettingsToggle
+    {
+        protected GameObject retainedCountSlider = null;
+
+        public void Start()
+        {
+            Core.Log("start called");
+            // Find the retained count slider and show/hide it based on our enableAutoDelete setting
+            retainedCountSlider = GameObject.Find("RetainedCount");
+            retainedCountSlider.SetActive(Core.enableAutoDelete.Value);
+            Core.Log("start done");
+        }
+
+        protected override void OnValueChanged(bool value)
+        {
+            retainedCountSlider.SetActive(value);
+            Core.Log($"{value}");
+            Core.enableAutoDelete.Value = value;
         }
     }
 }
