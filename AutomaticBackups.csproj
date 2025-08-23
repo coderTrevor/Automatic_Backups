@@ -946,6 +946,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="MenuMod.cs" />
+		<Compile Include="DeleteOldestToggle.cs" />
 		<Compile Include="Core.cs" />
 	</ItemGroup>
 	
