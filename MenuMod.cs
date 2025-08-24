@@ -27,12 +27,12 @@ namespace AutomaticBackups
         }
 
         void Init()
-        {            
+        {
             // We should be attached to the MainMenu GameObject
             GameObject mainMenu = gameObject;
-            
+
             // Settings object will be a child of MainMenu
-            Transform settings = mainMenu.transform.Find("Settings");                             
+            Transform settings = mainMenu.transform.Find("Settings");
 
             // Create the Backups button (tab on the settings display)
             Button backupsButton = CreateBackupsButton(settings);
@@ -99,8 +99,8 @@ namespace AutomaticBackups
             toggle.SetAsFirstSibling();
             Toggle toggleComponent = toggle.GetComponent<Toggle>();
             toggleComponent.isOn = Core.enableAutoDelete.Value;
-            
-            // Replace the invertY component with our DeleteOldestToggle component
+
+            // Replace the InvertYToggle component with our DeleteOldestToggle component
             Destroy(toggle.GetComponent<InvertYToggle>());
             toggle.gameObject.AddComponent<DeleteOldestToggle>();
 
@@ -110,22 +110,24 @@ namespace AutomaticBackups
         // Finds the mouse sensitivity slider we cloned from the Controls panel and repurposes it to control the number of files to back up
         Transform SetupRetentionSlider(Transform settingsPanel)
         {
-            Transform sensitivity = settingsPanel.Find("Sensitivity");
-            sensitivity.name = "RetainedCount";
-            
+            Transform sliderParent = settingsPanel.Find("Sensitivity");
+            sliderParent.name = "RetainedCount";
+
             // Ensure the GameObject is active so DeleteOldToggle can find it
-            sensitivity.gameObject.SetActive(true);
+            sliderParent.gameObject.SetActive(true);
 
-            SetLabelText(sensitivity, "Max Files Per Save Slot");
+            SetLabelText(sliderParent, "Max Files Per Save Slot");
 
-            Transform slider = sensitivity.Find("Slider");
+            Transform slider = sliderParent.Find("Slider");
 
-            // Remove the SensitivitySlider component
-            Destroy(slider.GetComponent<SensitivitySlider>());
+            // Remove the listener that the SensitivitySlider will have added
+            slider.GetComponent<Slider>().onValueChanged.RemoveAllListeners();
 
+            // Replace the SensitivitySlider with our RetentionAmountSlider
+            DestroyImmediate(slider.GetComponent<SensitivitySlider>());
             slider.gameObject.AddComponent<RetentionAmountSlider>();
 
-            return sensitivity;
+            return sliderParent;
         }
 
         // Given a Transform with a child named Label with a TMPro_Text component, update the label
