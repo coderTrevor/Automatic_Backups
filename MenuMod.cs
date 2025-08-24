@@ -88,14 +88,14 @@ namespace AutomaticBackups
         // Finds the "invertY" toggle we cloned from the Controls panel and repurposes it to toggle the option to delete oldest saves
         Transform SetupDeleteOldestToggle(Transform settingsPanel)
         {
-            Transform invertY = settingsPanel.Find("InvertY");
-            invertY.name = "DeleteOldSaves";
-            HorizontalLayoutGroup hlg = invertY.gameObject.AddComponent<HorizontalLayoutGroup>();
+            Transform toggleParent = settingsPanel.Find("InvertY");
+            toggleParent.name = "DeleteOldSaves";
+            HorizontalLayoutGroup hlg = toggleParent.gameObject.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 25;
 
-            SetLabelText(invertY, "Delete oldest saves");
+            SetLabelText(toggleParent, "Delete oldest saves");
 
-            Transform toggle = invertY.Find("Toggle");
+            Transform toggle = toggleParent.Find("Toggle");
             toggle.SetAsFirstSibling();
             Toggle toggleComponent = toggle.GetComponent<Toggle>();
             toggleComponent.isOn = Core.enableAutoDelete.Value;
@@ -104,7 +104,7 @@ namespace AutomaticBackups
             Destroy(toggle.GetComponent<InvertYToggle>());
             toggle.gameObject.AddComponent<DeleteOldestToggle>();
 
-            return invertY;
+            return toggleParent;
         }
 
         // Finds the mouse sensitivity slider we cloned from the Controls panel and repurposes it to control the number of files to back up
