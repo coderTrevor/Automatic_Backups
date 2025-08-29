@@ -23,7 +23,7 @@ namespace AutomaticBackups
     {
         void Awake()
         {
-            Init(); // Adding the Awake code to another function will keep VS from making all the code gray
+            Init(); // Calling the Awake code from another function will keep VS from making all the code gray
         }
 
         void Init()
@@ -112,9 +112,6 @@ namespace AutomaticBackups
         {
             Transform sliderParent = settingsPanel.Find("Sensitivity");
             sliderParent.name = "RetainedCount";
-
-            // Ensure the GameObject is active so DeleteOldToggle can find it
-            sliderParent.gameObject.SetActive(true);
 
             SetLabelText(sliderParent, "Max Files Per Save Slot");
 
