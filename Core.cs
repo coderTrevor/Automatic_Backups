@@ -4,11 +4,18 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using ScheduleOne.UI.Settings;
+using System.Collections.Generic;
+using System;
+using System.IO;
+using System.IO.Enumeration;
+using System.Collections;
 
 #if IL2CPP
+using Il2CppScheduleOne.DevUtilities;
 using Il2CppScheduleOne.Persistence;
 using Il2CppScheduleOne.UI.MainMenu;
 #elif MONO
+using ScheduleOne.DevUtilities;
 using ScheduleOne.Persistence;
 using ScheduleOne.UI.MainMenu;
 #else
@@ -38,6 +45,9 @@ namespace AutomaticBackups
         public static MelonPreferences_Entry<int> retentionSliderMinFiles;
         public static MelonPreferences_Entry<int> retentionSliderMaxFiles;
 
+        protected static DirectoryInfo backupDirInfo;
+        protected static Queue<FileInfo> orderedBackups; // List of backup files, ordered by age. The oldest file will be the next item dequeued.
+
         public override void OnInitializeMelon()
         {
             logger = LoggerInstance;
@@ -60,13 +70,68 @@ namespace AutomaticBackups
 
         public override void OnSceneWasInitialized(int buildIndex, string sceneName)
         {
-            // We only care about the Menu scene
-            if (sceneName != "Menu")
+            if (sceneName == "Menu")
+            {
+                // Add our MenuMod MonoBehavior to the MainMenu object
+                GameObject mainMenu = GameObject.Find("MainMenu");
+                if (mainMenu.GetComponent<MenuMod>())
+                {
+                    Log($"Backups menu has already been created.");
+                    return;
+                }
+                mainMenu.AddComponent<MenuMod>();
+            }
+            else if (sceneName == "Main")
+            {
+                // Ensure there's not too many files in the backup folder
+                ScanBackupsFolder();
+            }
+        }
+
+        // Scans backups folder and populates the orderedBackups Queue.
+        protected void ScanBackupsFolder()
+        {
+            string savePath = Singleton<LoadManager>.Instance.LoadedGameFolderPath;
+            string backupDir = GetBackupPath(savePath);
+            Log($"Backups will be saved to\n{backupDir}");
+
+            // Get all .zip backups for the current save, sorted by earliest of creation/modification time, and add them to our queue.
+            backupDirInfo = new DirectoryInfo(backupDir);
+            var sortedFiles = backupDirInfo.GetFiles("*.zip").OrderBy(f => Math.Min(f.CreationTimeUtc.Ticks, f.LastWriteTimeUtc.Ticks));
+            orderedBackups = new Queue<FileInfo>(sortedFiles);
+
+            if (orderedBackups.Count > 0)
+            {
+                long totalBytes = orderedBackups.Sum(f => f.Length);
+                double totalMB = totalBytes / (1024.0 * 1024.0);
+                Log($"{orderedBackups.Count} backup files found, using {totalMB:F1} MB of disk space");
+            }
+
+            DeleteExpiredBackups();
+        }
+
+        // If the user enabled deleting old backups, deletes the oldest backups until there are no more than what's allowed by autoDeleteRetentionCount.
+        protected static void DeleteExpiredBackups()
+        {
+            if (!enableAutoDelete.Value || orderedBackups.Count <= Core.autoDeleteRetentionCount.Value)
                 return;
 
-            // Add our MenuMod MonoBehavior to the MainMenu object
-            GameObject mainMenu = GameObject.Find("MainMenu");
-            mainMenu.AddComponent<MenuMod>();            
+            Log("Number of backup files exceeds user preferences");
+
+            while (orderedBackups.Count > Core.autoDeleteRetentionCount.Value)
+            {
+                FileInfo toDelete = orderedBackups.Dequeue();
+                Log($"{toDelete.Name} from {toDelete.CreationTime.ToShortDateString()} will be deleted");
+                toDelete.Delete();
+            }
+        }
+
+        // Adds a new backup file to the ordered list and ensures there aren't too many files in the directory
+        public static void AddNewBackupFile(string path)
+        {
+            orderedBackups.Enqueue(new FileInfo(path));
+
+            DeleteExpiredBackups();
         }
 
         [HarmonyPatch(typeof(SaveManager), "Save", new Type[] { typeof(string) })]
@@ -75,17 +140,7 @@ namespace AutomaticBackups
             // After saving, uses Schedule I's built-in zip exporter to backup the save that was just made to a timestamped zip file.
             public static void Postfix(string saveFolderPath)
             {
-                // Ensure there's no trailing path separator
-                saveFolderPath = saveFolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-                // Get the base name and parent path of the save directory
-                var saveFolderName = Path.GetFileName(saveFolderPath);
-                var parent = Directory.GetParent(saveFolderPath)?.FullName
-                             ?? throw new InvalidOperationException($"No parent directory for '{saveFolderPath}'.");
-
-                // Ensure the backup destination exists - <parent>\Backups\<saveFolderName>\
-                var backupDir = Path.Combine(parent, "Backups", saveFolderName);
-                Directory.CreateDirectory(backupDir);
+                string backupDir = GetBackupPath(saveFolderPath);
 
                 // Export save folder to .zip - <parent>\Backups\<saveFolderName>\<timestamp>.zip
                 var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
@@ -93,7 +148,28 @@ namespace AutomaticBackups
                 SaveExportButton.ZipSaveFolder(saveFolderPath, backupDest);
 
                 Core.logger.Msg($"Exported\n{saveFolderPath} to\n{backupDest}");
+
+                // Add the newly-created file to our ordered list of backups and ensure we don't have too many files
+                Core.AddNewBackupFile(backupDest);
             }
+        }
+
+        // Given the save folder path, convert to our backup path and ensure it exists
+        static string GetBackupPath(string saveFolderPath)
+        {
+            // Ensure there's no trailing path separator
+            saveFolderPath = saveFolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            // Get the base name and parent path of the save directory
+            string saveFolderName = Path.GetFileName(saveFolderPath);
+            string parent = Directory.GetParent(saveFolderPath)?.FullName
+                         ?? throw new InvalidOperationException($"No parent directory for '{saveFolderPath}'.");
+
+            // Ensure the backup destination exists - <parent>\Backups\<saveFolderName>\
+            string backupDir = Path.Combine(parent, "Backups", saveFolderName);
+            Directory.CreateDirectory(backupDir);
+
+            return backupDir;
         }
     }
 }
