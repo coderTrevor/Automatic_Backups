@@ -20,7 +20,7 @@ using ScheduleOne.UI.MainMenu;
     // Other configs could go here
 #endif
 
-[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.0.1-beta", "coderTrevor", null)]
+[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.1.0-beta", "coderTrevor", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace AutomaticBackups
