@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
@@ -24,7 +24,7 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<AssemblyName>AutomaticBackups_IL2Cpp</AssemblyName>
 	</PropertyGroup>
-	
+
 	<PropertyGroup Condition="'$(Configuration)' == 'MONO'">
 		<S1Dir>C:\Program Files (x86)\Steam\steamapps\common\Schedule I</S1Dir>
 		<!--Change this-->
@@ -946,9 +946,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="RetentionAmountSlider.cs" />
+		<Compile Include="MenuMod.cs" />
+		<Compile Include="DeleteOldestToggle.cs" />
 		<Compile Include="Core.cs" />
 	</ItemGroup>
-	
+
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Exec Command="COPY &quot;$(TargetPath)&quot; &quot;$(S1Dir)\Mods&quot;" />
 	</Target>
