@@ -1,9 +1,7 @@
 ﻿using MelonLoader;
 using HarmonyLib;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using ScheduleOne.UI.Settings;
 using System.Collections.Generic;
 using System;
 using System.IO;

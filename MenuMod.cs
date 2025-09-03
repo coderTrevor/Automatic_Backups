@@ -1,24 +1,28 @@
 ﻿using MelonLoader;
 using HarmonyLib;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using ScheduleOne.UI.Settings;
-
-#if IL2CPP
-using Il2CppScheduleOne.Persistence;
-using Il2CppScheduleOne.UI.MainMenu;
-#elif MONO
+using UnityEngine.Events;
+using System.Reflection;
+#if MONO
 using ScheduleOne.Persistence;
 using ScheduleOne.UI.MainMenu;
+using ScheduleOne.UI.Settings;
+using TMPro;
 #else
-    // Other configs could go here
+using Il2CppTMPro;
+using Il2CppScheduleOne.Persistence;
+using Il2CppScheduleOne.UI.MainMenu;
+using Il2CppScheduleOne.UI.Settings;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 #endif
 
 namespace AutomaticBackups
 {
     // Allows us to add a category to the Settings display with our mod's settings
     // We need a MonoBehavior so we can clone existing objects in the scene hierarchy (I don't know how to do this outside of a MonoBehavior)
+    [RegisterTypeInIl2Cpp]
     public class MenuMod : MonoBehaviour
     {
         void Awake()
@@ -148,24 +152,32 @@ namespace AutomaticBackups
         void AddSettingsCategory(Transform settings, Button modSettingsButton, GameObject modSettingsPanel)
         {
             SettingsScreen settingsScreen = settings.GetComponent<SettingsScreen>();
-            int categoryCount = settingsScreen.Categories.Length;
 
             // Embiggen the Categories array
-            Array.Resize<SettingsScreen.SettingsCategory>(ref settingsScreen.Categories, categoryCount + 1);
-            categoryCount++;
+            EnlargeCategories(settingsScreen);
 
             // Add a new settings category with our button & panel
             SettingsScreen.SettingsCategory backupCategory = new SettingsScreen.SettingsCategory();
             backupCategory.Button = modSettingsButton;
             backupCategory.Panel = modSettingsPanel;
-            int lastCategoryIndex = categoryCount - 1;
-            settingsScreen.Categories[lastCategoryIndex] = backupCategory;
+            int categoryIndex = settingsScreen.Categories.Length - 1;
+            settingsScreen.Categories[categoryIndex] = backupCategory;
+        }
 
-            // Add a listener to our button to show the category we've just added
-            modSettingsButton.GetComponent<Button>().onClick.AddListener(delegate ()
-            {
-                GameObject.FindAnyObjectByType<SettingsScreen>().ShowCategory(lastCategoryIndex);
-            });
+        // Copy the Categories array to a new array with one more slot and assign it back to the SettingsScreen.
+        // (This proved simpler than figuring out how to use Array.Resize() with Il2Cpp.)
+        void EnlargeCategories(SettingsScreen settingsScreen)
+        {
+            var categories = settingsScreen.Categories;
+
+            // Create a larger array
+            SettingsScreen.SettingsCategory[] newCategories = new SettingsScreen.SettingsCategory[categories.Length + 1];
+
+            // Copy the old array to the new one
+            for (int i = 0; i < categories.Length; i++)
+                newCategories[i] = categories[i];
+
+            settingsScreen.Categories = newCategories;
         }
     }
 }

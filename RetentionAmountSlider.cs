@@ -1,22 +1,23 @@
 ﻿using MelonLoader;
 using HarmonyLib;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using ScheduleOne.UI.Settings;
 
 #if IL2CPP
 using Il2CppScheduleOne.Persistence;
 using Il2CppScheduleOne.UI.MainMenu;
+using Il2CppScheduleOne.UI.Settings;
 #elif MONO
 using ScheduleOne.Persistence;
 using ScheduleOne.UI.MainMenu;
+using ScheduleOne.UI.Settings;
 #else
     // Other configs could go here
 #endif
 
 namespace AutomaticBackups
 {
+    [RegisterTypeInIl2Cpp]
     public class RetentionAmountSlider : SettingsSlider
     {
         protected int multiplier;
@@ -38,14 +39,29 @@ namespace AutomaticBackups
             return (int)Mathf.Floor(quotient);
         }
 
-        protected override string GetDisplayValue(float value)
+#if IL2CPP
+        public
+#else
+        protected 
+#endif
+        override string GetDisplayValue(float value)
         {
             return ((int)Mathf.Round(value * multiplier)).ToString();
         }
-
-        protected override void OnValueChanged(float value)
+        
+#if IL2CPP
+        public
+#else
+        protected 
+#endif
+            override void OnValueChanged(float value)
         {
-            base.OnValueChanged(value);
+            this.timeOnValueChange = Time.time;
+            if (this.DisplayValue)
+            {
+                this.valueLabel.text = this.GetDisplayValue(value);
+                this.valueLabel.enabled = true;
+            }
             Core.autoDeleteRetentionCount.Value = (int)value * multiplier;
         }
     }
