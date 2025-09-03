@@ -97,7 +97,7 @@ namespace AutomaticBackups
             HorizontalLayoutGroup hlg = toggleParent.gameObject.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 25;
 
-            SetLabelText(toggleParent, "Delete oldest saves");
+            SetLabelText(toggleParent, "Limit Backups");
 
             Transform toggle = toggleParent.Find("Toggle");
             toggle.SetAsFirstSibling();
