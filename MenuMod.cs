@@ -108,7 +108,7 @@ namespace AutomaticBackups
             toggleComponent.isOn = Core.enableAutoDelete.Value;
 
             // Replace the InvertYToggle component with our DeleteOldestToggle component
-            Destroy(toggle.GetComponent<InvertYToggle>());
+            DestroyImmediate(toggle.GetComponent<InvertYToggle>());
             toggle.gameObject.AddComponent<DeleteOldestToggle>();
 
             return toggleParent;
