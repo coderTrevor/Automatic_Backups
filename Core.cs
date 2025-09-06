@@ -40,6 +40,12 @@ namespace AutomaticBackups
         public const int DEFAULT_RETENTION_COUNT = 125;
         private MelonPreferences_Category autoDeleteCategory;
 
+        // Auto-save settings
+        public static MelonPreferences_Entry<bool> enableAutoSave;
+        public static MelonPreferences_Entry<int> autoSaveTime;
+        public const int DEFAULT_SAVE_TIME = 10;
+        private MelonPreferences_Category autoSaveCategory;
+
         // These are only used as constants in the code, but we can still let advanced users edit their values in MelonPreferences.cfg
         public const int RETENTION_SLIDER_MULTIPLIER = 5;
         public const int RETENTION_SLIDER_MIN_FILES = 25;
@@ -47,6 +53,10 @@ namespace AutomaticBackups
         public static MelonPreferences_Entry<int> retentionSliderMultiplier;
         public static MelonPreferences_Entry<int> retentionSliderMinFiles;
         public static MelonPreferences_Entry<int> retentionSliderMaxFiles;
+        public const int AUTOSAVE_TIME_MIN_MINUTES = 1;
+        public const int AUTOSAVE_TIME_MAX_MINUTES = 60;
+        public static MelonPreferences_Entry<int> autoSaveSliderMinTime;
+        public static MelonPreferences_Entry<int> autoSaveSliderMaxTime;
 
         protected static DirectoryInfo backupDirInfo;
         protected static Queue<FileInfo> orderedBackups; // List of backup files, ordered by age. The oldest file will be the next item dequeued.
@@ -55,13 +65,20 @@ namespace AutomaticBackups
         {
             logger = LoggerInstance;
 
-            // Create our preferences
+            // Auto-delete preferences
             autoDeleteCategory = MelonPreferences.CreateCategory("AutoDeleteCategory");
             enableAutoDelete = autoDeleteCategory.CreateEntry<bool>("EnableAutoDelete", false);
             retentionSliderMultiplier = autoDeleteCategory.CreateEntry<int>("RetentionSliderMultiplier", RETENTION_SLIDER_MULTIPLIER);
             retentionSliderMinFiles = autoDeleteCategory.CreateEntry<int>("RetentionSliderMinFiles", RETENTION_SLIDER_MIN_FILES);
             retentionSliderMaxFiles = autoDeleteCategory.CreateEntry<int>("RetentionSliderMaxFiles", RETENTION_SLIDER_MAX_FILES);
             autoDeleteRetentionCount = autoDeleteCategory.CreateEntry<int>("AutoDeleteRetentionCount", DEFAULT_RETENTION_COUNT);
+
+            // Auto-save preferences
+            autoSaveCategory = MelonPreferences.CreateCategory("AutoSaveCategory");
+            enableAutoSave = autoSaveCategory.CreateEntry<bool>("EnableAutoSave", true);
+            autoSaveSliderMinTime = autoSaveCategory.CreateEntry<int>("timeSliderMinMinutes", AUTOSAVE_TIME_MIN_MINUTES);
+            autoSaveSliderMaxTime = autoSaveCategory.CreateEntry<int>("timeSliderMaxMinutes", AUTOSAVE_TIME_MAX_MINUTES);
+            autoSaveTime = autoSaveCategory.CreateEntry<int>("autoSaveTime", DEFAULT_SAVE_TIME);
 
             logger.Msg("Automatic Backups Initialized.");
         }
