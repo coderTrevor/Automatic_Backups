@@ -12,6 +12,7 @@ using System.Collections;
 using Il2CppScheduleOne.DevUtilities;
 using Il2CppScheduleOne.Persistence;
 using Il2CppScheduleOne.UI.MainMenu;
+using Il2CppFishNet;
 #elif MONO
 using ScheduleOne.DevUtilities;
 using ScheduleOne.Persistence;
@@ -203,8 +204,8 @@ namespace AutomaticBackups
         {
             base.OnUpdate();
 
-            // Don't take any action if autosaving is disabled
-            if (!enableAutoSave.Value)
+            // Don't take any action if autosaving is disabled or we aren't the host
+            if (!enableAutoSave.Value || !InstanceFinder.IsHost)
                 return;
 
             // Count down autosave timer
