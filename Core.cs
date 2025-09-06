@@ -61,6 +61,8 @@ namespace AutomaticBackups
         protected static DirectoryInfo backupDirInfo;
         protected static Queue<FileInfo> orderedBackups; // List of backup files, ordered by age. The oldest file will be the next item dequeued.
 
+        protected static float timeBeforeAutoSave = 600.0f; // Actual value will be calculated later
+
         public override void OnInitializeMelon()
         {
             logger = LoggerInstance;
@@ -105,6 +107,8 @@ namespace AutomaticBackups
             {
                 // Ensure there's not too many files in the backup folder
                 ScanBackupsFolder();
+
+                ResetAutoSaveTimer();
             }
         }
 
@@ -171,6 +175,8 @@ namespace AutomaticBackups
 
                 // Add the newly-created file to our ordered list of backups and ensure we don't have too many files
                 Core.AddNewBackupFile(backupDest);
+
+                ResetAutoSaveTimer();
             }
         }
 
@@ -190,6 +196,35 @@ namespace AutomaticBackups
             Directory.CreateDirectory(backupDir);
 
             return backupDir;
+        }
+
+        // Handle autosaving
+        public override void OnUpdate()
+        {
+            base.OnUpdate();
+
+            // Don't take any action if autosaving is disabled
+            if (!enableAutoSave.Value)
+                return;
+
+            // Count down autosave timer
+            timeBeforeAutoSave -= Time.deltaTime;
+            if (timeBeforeAutoSave > 0f)
+                return;
+
+            // Time to autosave
+            Log("Autosaving...");
+            Singleton<SaveManager>.Instance.Save();
+
+            // (Timer will be reset in Save Postfix)
+        }
+
+        // Determine how many seconds need to pass before the next autosave timer fires, based on user preferences.
+        // Assumes the timer is starting fresh.
+        // Will still calculate a value even if autosaving is disabled.
+        static void ResetAutoSaveTimer()
+        {
+            timeBeforeAutoSave = 60f * autoSaveTime.Value;
         }
     }
 }
