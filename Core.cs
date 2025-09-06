@@ -63,6 +63,8 @@ namespace AutomaticBackups
         protected static Queue<FileInfo> orderedBackups; // List of backup files, ordered by age. The oldest file will be the next item dequeued.
 
         protected static float timeBeforeAutoSave = 600.0f; // Actual value will be calculated later
+        protected static bool autoSaving = false; // If the Save() call was made by autosave
+        protected static bool inMainScene = false;
 
         public override void OnInitializeMelon()
         {
@@ -93,6 +95,7 @@ namespace AutomaticBackups
 
         public override void OnSceneWasInitialized(int buildIndex, string sceneName)
         {
+            inMainScene = false;
             if (sceneName == "Menu")
             {
                 // Add our MenuMod MonoBehavior to the MainMenu object
@@ -110,6 +113,8 @@ namespace AutomaticBackups
                 ScanBackupsFolder();
 
                 ResetAutoSaveTimer();
+
+                inMainScene = true;
             }
         }
 
@@ -169,7 +174,8 @@ namespace AutomaticBackups
 
                 // Export save folder to .zip - <parent>\Backups\<saveFolderName>\<timestamp>.zip
                 var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                var backupDest = Path.Combine(backupDir, timestamp + ".zip");
+                var autosavePrefix = autoSaving ? "auto_" : "";
+                var backupDest = Path.Combine(backupDir, autosavePrefix + timestamp + ".zip");
                 SaveExportButton.ZipSaveFolder(saveFolderPath, backupDest);
 
                 Core.logger.Msg($"Exported\n{saveFolderPath} to\n{backupDest}");
@@ -204,8 +210,9 @@ namespace AutomaticBackups
         {
             base.OnUpdate();
 
-            // Don't take any action if autosaving is disabled or we aren't the host
-            if (!enableAutoSave.Value || !InstanceFinder.IsHost)
+            // Don't take any action if autosaving is disabled, we aren't the host,
+            // or we aren't in the Main scene
+            if (!enableAutoSave.Value || !InstanceFinder.IsHost || !inMainScene)
                 return;
 
             // Count down autosave timer
@@ -215,6 +222,7 @@ namespace AutomaticBackups
 
             // Time to autosave
             Log("Autosaving...");
+            autoSaving = true;
             Singleton<SaveManager>.Instance.Save();
 
             // (Timer will be reset in Save Postfix)
@@ -226,6 +234,7 @@ namespace AutomaticBackups
         static void ResetAutoSaveTimer()
         {
             timeBeforeAutoSave = 60f * autoSaveTime.Value;
+            autoSaving = false;
         }
     }
 }
