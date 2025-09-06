@@ -22,6 +22,11 @@ using ScheduleOne.UI.MainMenu;
 
 [assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.1.0-beta", "coderTrevor", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
+#if MONO
+[assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
+#else
+[assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.IL2CPP)]
+#endif
 
 namespace AutomaticBackups
 {
