@@ -12,16 +12,23 @@ using System.Collections;
 using Il2CppScheduleOne.DevUtilities;
 using Il2CppScheduleOne.Persistence;
 using Il2CppScheduleOne.UI.MainMenu;
+using Il2CppFishNet;
 #elif MONO
 using ScheduleOne.DevUtilities;
 using ScheduleOne.Persistence;
 using ScheduleOne.UI.MainMenu;
+using FishNet;
 #else
     // Other configs could go here
 #endif
 
 [assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.1.0-beta", "coderTrevor", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
+#if MONO
+[assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
+#else
+[assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.IL2CPP)]
+#endif
 
 namespace AutomaticBackups
 {
@@ -35,6 +42,12 @@ namespace AutomaticBackups
         public const int DEFAULT_RETENTION_COUNT = 125;
         private MelonPreferences_Category autoDeleteCategory;
 
+        // Auto-save settings
+        public static MelonPreferences_Entry<bool> enableAutoSave;
+        public static MelonPreferences_Entry<int> autoSaveTime;
+        public const int DEFAULT_SAVE_TIME = 10;
+        private MelonPreferences_Category autoSaveCategory;
+
         // These are only used as constants in the code, but we can still let advanced users edit their values in MelonPreferences.cfg
         public const int RETENTION_SLIDER_MULTIPLIER = 5;
         public const int RETENTION_SLIDER_MIN_FILES = 25;
@@ -42,21 +55,36 @@ namespace AutomaticBackups
         public static MelonPreferences_Entry<int> retentionSliderMultiplier;
         public static MelonPreferences_Entry<int> retentionSliderMinFiles;
         public static MelonPreferences_Entry<int> retentionSliderMaxFiles;
+        public const int AUTOSAVE_TIME_MIN_MINUTES = 1;
+        public const int AUTOSAVE_TIME_MAX_MINUTES = 60;
+        public static MelonPreferences_Entry<int> autoSaveSliderMinTime;
+        public static MelonPreferences_Entry<int> autoSaveSliderMaxTime;
 
         protected static DirectoryInfo backupDirInfo;
         protected static Queue<FileInfo> orderedBackups; // List of backup files, ordered by age. The oldest file will be the next item dequeued.
+
+        protected static float timeBeforeAutoSave = 600.0f; // Actual value will be calculated later
+        protected static bool autoSaving = false; // If the Save() call was made by autosave
+        protected static bool inMainScene = false;
 
         public override void OnInitializeMelon()
         {
             logger = LoggerInstance;
 
-            // Create our preferences
+            // Auto-delete preferences
             autoDeleteCategory = MelonPreferences.CreateCategory("AutoDeleteCategory");
             enableAutoDelete = autoDeleteCategory.CreateEntry<bool>("EnableAutoDelete", false);
             retentionSliderMultiplier = autoDeleteCategory.CreateEntry<int>("RetentionSliderMultiplier", RETENTION_SLIDER_MULTIPLIER);
             retentionSliderMinFiles = autoDeleteCategory.CreateEntry<int>("RetentionSliderMinFiles", RETENTION_SLIDER_MIN_FILES);
             retentionSliderMaxFiles = autoDeleteCategory.CreateEntry<int>("RetentionSliderMaxFiles", RETENTION_SLIDER_MAX_FILES);
             autoDeleteRetentionCount = autoDeleteCategory.CreateEntry<int>("AutoDeleteRetentionCount", DEFAULT_RETENTION_COUNT);
+
+            // Auto-save preferences
+            autoSaveCategory = MelonPreferences.CreateCategory("AutoSaveCategory");
+            enableAutoSave = autoSaveCategory.CreateEntry<bool>("EnableAutoSave", true);
+            autoSaveSliderMinTime = autoSaveCategory.CreateEntry<int>("timeSliderMinMinutes", AUTOSAVE_TIME_MIN_MINUTES);
+            autoSaveSliderMaxTime = autoSaveCategory.CreateEntry<int>("timeSliderMaxMinutes", AUTOSAVE_TIME_MAX_MINUTES);
+            autoSaveTime = autoSaveCategory.CreateEntry<int>("autoSaveTime", DEFAULT_SAVE_TIME);
 
             logger.Msg("Automatic Backups Initialized.");
         }
@@ -68,6 +96,7 @@ namespace AutomaticBackups
 
         public override void OnSceneWasInitialized(int buildIndex, string sceneName)
         {
+            inMainScene = false;
             if (sceneName == "Menu")
             {
                 // Add our MenuMod MonoBehavior to the MainMenu object
@@ -83,6 +112,10 @@ namespace AutomaticBackups
             {
                 // Ensure there's not too many files in the backup folder
                 ScanBackupsFolder();
+
+                ResetAutoSaveTimer();
+
+                inMainScene = true;
             }
         }
 
@@ -142,13 +175,16 @@ namespace AutomaticBackups
 
                 // Export save folder to .zip - <parent>\Backups\<saveFolderName>\<timestamp>.zip
                 var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                var backupDest = Path.Combine(backupDir, timestamp + ".zip");
+                var autosavePrefix = autoSaving ? "auto_" : "";
+                var backupDest = Path.Combine(backupDir, autosavePrefix + timestamp + ".zip");
                 SaveExportButton.ZipSaveFolder(saveFolderPath, backupDest);
 
                 Core.logger.Msg($"Exported\n{saveFolderPath} to\n{backupDest}");
 
                 // Add the newly-created file to our ordered list of backups and ensure we don't have too many files
                 Core.AddNewBackupFile(backupDest);
+
+                ResetAutoSaveTimer();
             }
         }
 
@@ -168,6 +204,38 @@ namespace AutomaticBackups
             Directory.CreateDirectory(backupDir);
 
             return backupDir;
+        }
+
+        // Handle autosaving
+        public override void OnUpdate()
+        {
+            base.OnUpdate();
+
+            // Don't take any action if autosaving is disabled, we aren't the host,
+            // or we aren't in the Main scene
+            if (!enableAutoSave.Value || !InstanceFinder.IsHost || !inMainScene)
+                return;
+
+            // Count down autosave timer
+            timeBeforeAutoSave -= Time.deltaTime;
+            if (timeBeforeAutoSave > 0f)
+                return;
+
+            // Time to autosave
+            Log("Autosaving...");
+            autoSaving = true;
+            Singleton<SaveManager>.Instance.Save();
+
+            // (Timer will be reset in Save Postfix)
+        }
+
+        // Determine how many seconds need to pass before the next autosave timer fires, based on user preferences.
+        // Assumes the timer is starting fresh.
+        // Will still calculate a value even if autosaving is disabled.
+        static void ResetAutoSaveTimer()
+        {
+            timeBeforeAutoSave = 60f * autoSaveTime.Value;
+            autoSaving = false;
         }
     }
 }

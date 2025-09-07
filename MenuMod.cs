@@ -75,7 +75,7 @@ namespace AutomaticBackups
             // Update the panel clone
             modSettingsPanel.name = "Backups";
 
-            // Setup our controls
+            // Setup auto-delete controls
             Transform retentionSlider = SetupRetentionSlider(modSettingsPanel);
             Transform deleteOldestToggle = SetupDeleteOldestToggle(modSettingsPanel);
 
@@ -85,6 +85,9 @@ namespace AutomaticBackups
             DestroyAllChildren(modSettingsPanel);
             deleteOldestToggle.SetParent(modSettingsPanel);
             retentionSlider.SetParent(modSettingsPanel);
+
+            // Setup auto-save controls by cloning auto-delete controls
+            AddAutoSaveControls(modSettingsPanel, deleteOldestToggle, retentionSlider);
 
             return modSettingsPanel.gameObject;
         }
@@ -105,7 +108,7 @@ namespace AutomaticBackups
             toggleComponent.isOn = Core.enableAutoDelete.Value;
 
             // Replace the InvertYToggle component with our DeleteOldestToggle component
-            Destroy(toggle.GetComponent<InvertYToggle>());
+            DestroyImmediate(toggle.GetComponent<InvertYToggle>());
             toggle.gameObject.AddComponent<DeleteOldestToggle>();
 
             return toggleParent;
@@ -146,6 +149,24 @@ namespace AutomaticBackups
             {
                 Destroy(parent.GetChild(i).gameObject);
             }
+        }
+
+        void AddAutoSaveControls(Transform modSettingsPanel, Transform deleteOldestToggle, Transform retentionSlider)
+        {
+            // Setup auto-save controls by cloning auto-delete controls
+            Transform autoSaveToggle = Instantiate(deleteOldestToggle, modSettingsPanel);
+            Transform autoSaveTimeSlider = Instantiate(retentionSlider, modSettingsPanel);
+            autoSaveToggle.name = "Enable AutoSave";
+            autoSaveTimeSlider.name = "AutoSave Time";
+
+            // Update the autosave controls
+            DestroyImmediate(autoSaveToggle.Find("Toggle").GetComponent<DeleteOldestToggle>());
+            DestroyImmediate(autoSaveTimeSlider.Find("Slider").GetComponent<RetentionAmountSlider>());
+            SetLabelText(autoSaveToggle, "Enable AutoSave");
+            SetLabelText(autoSaveTimeSlider, "Minutes Before Saving");
+            AutoSaveToggle toggleComponenet = autoSaveToggle.Find("Toggle").gameObject.AddComponent<AutoSaveToggle>();
+            toggleComponenet.saveTimeSlider = autoSaveTimeSlider.gameObject;
+            autoSaveTimeSlider.Find("Slider").gameObject.AddComponent<AutoSaveTimeSlider>();
         }
 
         // Add a tab to the settings display with our mod's settings
