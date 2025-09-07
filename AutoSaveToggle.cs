@@ -17,7 +17,7 @@ namespace AutomaticBackups
     [RegisterTypeInIl2Cpp]
     public class AutoSaveToggle : SettingsToggle
     {
-        protected GameObject saveTimeSlider = null;
+        public GameObject saveTimeSlider = null;
 
         public void Start()
         {
@@ -27,8 +27,7 @@ namespace AutomaticBackups
             Toggle toggleComponent = gameObject.GetComponent<Toggle>();
             toggleComponent.isOn = enableAutoSave;
 
-            // Find the retained count slider and show/hide it based on our enableAutoSave setting
-            saveTimeSlider = GameObject.Find("AutoSave Time");
+            // Show/hide the time slider based on our enableAutoSave setting
             saveTimeSlider.SetActive(enableAutoSave);
         }
         

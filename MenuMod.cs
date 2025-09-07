@@ -164,7 +164,8 @@ namespace AutomaticBackups
             DestroyImmediate(autoSaveTimeSlider.Find("Slider").GetComponent<RetentionAmountSlider>());
             SetLabelText(autoSaveToggle, "Enable AutoSave");
             SetLabelText(autoSaveTimeSlider, "Minutes Before Saving");
-            autoSaveToggle.Find("Toggle").gameObject.AddComponent<AutoSaveToggle>();
+            AutoSaveToggle toggleComponenet = autoSaveToggle.Find("Toggle").gameObject.AddComponent<AutoSaveToggle>();
+            toggleComponenet.saveTimeSlider = autoSaveTimeSlider.gameObject;
             autoSaveTimeSlider.Find("Slider").gameObject.AddComponent<AutoSaveTimeSlider>();
         }
 
