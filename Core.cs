@@ -107,6 +107,9 @@ namespace AutomaticBackups
                     return;
                 }
                 mainMenu.AddComponent<SettingsMenuMod>();
+
+                // Add the Continue menu mod
+                mainMenu.AddComponent<ContinueMenuMod>();                
             }
             else if (sceneName == "Main")
             {
