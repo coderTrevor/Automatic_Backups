@@ -949,7 +949,7 @@
 		<Compile Include="AutoSaveToggle.cs" />
 		<Compile Include="AutoSaveTimeSlider.cs" />
 		<Compile Include="RetentionAmountSlider.cs" />
-		<Compile Include="MenuMod.cs" />
+		<Compile Include="SettingsMenuMod.cs" />
 		<Compile Include="DeleteOldestToggle.cs" />
 		<Compile Include="Core.cs" />
 	</ItemGroup>

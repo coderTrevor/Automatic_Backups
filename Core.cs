@@ -22,7 +22,7 @@ using FishNet;
     // Other configs could go here
 #endif
 
-[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.1.0-beta", "coderTrevor", null)]
+[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.2.0-beta", "coderTrevor", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 #if MONO
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]
@@ -99,14 +99,14 @@ namespace AutomaticBackups
             inMainScene = false;
             if (sceneName == "Menu")
             {
-                // Add our MenuMod MonoBehavior to the MainMenu object
+                // Add our SettingsMenuMod MonoBehavior to the MainMenu object
                 GameObject mainMenu = GameObject.Find("MainMenu");
-                if (mainMenu.GetComponent<MenuMod>())
+                if (mainMenu.GetComponent<SettingsMenuMod>())
                 {
                     Log($"Backups menu has already been created.");
                     return;
                 }
-                mainMenu.AddComponent<MenuMod>();
+                mainMenu.AddComponent<SettingsMenuMod>();
             }
             else if (sceneName == "Main")
             {
