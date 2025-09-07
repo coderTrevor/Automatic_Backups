@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using MelonLoader;
 
 #if IL2CPP
@@ -20,9 +21,15 @@ namespace AutomaticBackups
 
         public void Start()
         {
-            // Find the retained count slider and show/hide it based on our enableAutoDelete setting
+            bool enableAutoSave = Core.enableAutoSave.Value;
+
+            // Set the Toggle according to enableAutoSave
+            Toggle toggleComponent = gameObject.GetComponent<Toggle>();
+            toggleComponent.isOn = enableAutoSave;
+
+            // Find the retained count slider and show/hide it based on our enableAutoSave setting
             saveTimeSlider = GameObject.Find("AutoSave Time");
-            saveTimeSlider.SetActive(Core.enableAutoSave.Value);
+            saveTimeSlider.SetActive(enableAutoSave);
         }
         
 #if IL2CPP
