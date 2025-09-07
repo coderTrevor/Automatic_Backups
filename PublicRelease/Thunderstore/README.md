@@ -23,15 +23,12 @@ Notes:
 
 # Settings
 You can change the settings for this mod through the settings menu when you first load the game up. Just click the `Backups` tab.
-
-![Settings Screenshot](/PublicRelease/Images/Settings.jpg)
   
 ### Delete Old Backups
 You can configure the mod to automatically delete the oldest backups once a certain limit has been reached.
 You can turn this feature on or off and the available range is between 25 - 250 in increments of 5. I recommend leaving this setting off or setting the limit very high; it's not always obvious right-away if the game has bugged your save.
 
 When you first load a save slot, you can check the MelonLoader console to see how much disk space your backups are taking up. It's pretty negligible in my experience.
-![MelonLoader Log](/PublicRelease/Images/MelonLog.png)
 
 ### AutoSave
 The mod can automatically save your progress if some amount of time passes since your last save. The timer resets on every save.  
