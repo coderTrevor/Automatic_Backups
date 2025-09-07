@@ -17,6 +17,7 @@ using Il2CppFishNet;
 using ScheduleOne.DevUtilities;
 using ScheduleOne.Persistence;
 using ScheduleOne.UI.MainMenu;
+using FishNet;
 #else
     // Other configs could go here
 #endif
