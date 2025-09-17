@@ -946,13 +946,26 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Remove="Assets\scrollview" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Include="AutoSaveToggle.cs" />
 		<Compile Include="AutoSaveTimeSlider.cs" />
+		<Compile Include="RestoreBackupScreen.cs" />
 		<Compile Include="RetentionAmountSlider.cs" />
 		<Compile Include="ContinueMenuMod.cs" />
 		<Compile Include="SettingsMenuMod.cs" />
 		<Compile Include="DeleteOldestToggle.cs" />
 		<Compile Include="Core.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="scrollview" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Assets\" />
 	</ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">

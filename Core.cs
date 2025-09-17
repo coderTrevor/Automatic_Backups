@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.IO.Enumeration;
 using System.Collections;
+using System.Reflection;
 
 #if IL2CPP
 using Il2CppScheduleOne.DevUtilities;
@@ -67,6 +68,11 @@ namespace AutomaticBackups
         protected static bool autoSaving = false; // If the Save() call was made by autosave
         protected static bool inMainScene = false;
 
+        public AssetBundle assetBundle = null;
+        public static GameObject scrollViewPrefab = null;
+        public static GameObject backupRestorePanelPrefab = null;
+        public static GameObject backupRestoreButtonPrefab = null;
+
         public override void OnInitializeMelon()
         {
             logger = LoggerInstance;
@@ -85,6 +91,63 @@ namespace AutomaticBackups
             autoSaveSliderMinTime = autoSaveCategory.CreateEntry<int>("timeSliderMinMinutes", AUTOSAVE_TIME_MIN_MINUTES);
             autoSaveSliderMaxTime = autoSaveCategory.CreateEntry<int>("timeSliderMaxMinutes", AUTOSAVE_TIME_MAX_MINUTES);
             autoSaveTime = autoSaveCategory.CreateEntry<int>("autoSaveTime", DEFAULT_SAVE_TIME);
+
+
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutomaticBackups.scrollview"); // Get the AssetBundle Stream
+            if (stream == null) // If it doesn't exist...
+            {
+                LoggerInstance.Msg("Failed to load scrollview asset bundle!");
+                return;
+            }
+            else
+                LoggerInstance.Msg("Loaded asset bundle from stream: " + stream + " CanRead: " + stream.CanRead + " CanSeek: " + stream.CanSeek);
+
+            assetBundle = AssetBundle.LoadFromStream(stream); // Load the AssetBundle from the Stream
+            if (assetBundle == null)
+            {
+                LoggerInstance.Msg("Failed to load asset bundle");
+                return;
+            }
+            else
+                LoggerInstance.Msg("Loaded asset bundle: " + assetBundle);
+            stream.Close(); // Close it to remove it from RAM (saves system resources!)
+
+            string[] strings = assetBundle.GetAllAssetNames();
+            foreach (string s in strings)
+            {
+                LoggerInstance.Msg($"Asset: `{s}`");
+            }
+
+            try
+            {
+                // Load the Scroll View prefab
+                const string scrollViewPrefabName = "assets/assets/trevorsassets/modmenu/prefabs/scroll view.prefab";
+                scrollViewPrefab = assetBundle.LoadAsset<GameObject>(scrollViewPrefabName);
+                if (scrollViewPrefab == null)
+                    LoggerInstance.Msg($"Failed to load {scrollViewPrefabName}");
+                else
+                    LoggerInstance.Msg($"Loaded prefab: {scrollViewPrefab}");
+
+                // Load the Backup Restore panel prefab
+                const string backupPanelPrefabName = "assets/assets/trevorsassets/modmenu/prefabs/backuprestore.prefab";
+                backupRestorePanelPrefab = assetBundle.LoadAsset<GameObject>(backupPanelPrefabName);
+                if (backupRestorePanelPrefab == null)
+                    LoggerInstance.Msg($"Failed to load {backupPanelPrefabName}");
+                else
+                    LoggerInstance.Msg($"Loaded prefab: {backupRestorePanelPrefab}");
+
+                // Load the Backup Restore button prefab
+                const string backupRestoreButtonPrefabName = "assets/assets/trevorsassets/modmenu/prefabs/backup restore button.prefab";
+                backupRestoreButtonPrefab = assetBundle.LoadAsset<GameObject>(backupRestoreButtonPrefabName);
+                if (backupRestoreButtonPrefab == null)
+                    LoggerInstance.Msg($"Failed to load {backupRestoreButtonPrefabName}");
+                else
+                    LoggerInstance.Msg($"Loaded prefab: {backupRestoreButtonPrefabName}");
+            }
+            catch (Exception ex)
+            {
+                LoggerInstance.Msg($"Failed to load {ex.Message}");
+            }
 
             logger.Msg("Automatic Backups Initialized.");
         }

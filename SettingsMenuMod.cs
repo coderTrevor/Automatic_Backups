@@ -142,7 +142,7 @@ namespace AutomaticBackups
         }
 
         // Destroys all children of a given Transform
-        void DestroyAllChildren(Transform parent)
+        public static void DestroyAllChildren(Transform parent)
         {
             // Iterate backwards to avoid issues while modifying the hierarchy
             for (int i = parent.childCount - 1; i >= 0; i--)
