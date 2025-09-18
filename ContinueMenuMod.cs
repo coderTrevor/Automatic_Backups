@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Reflection;
+using static MelonLoader.Modules.MelonModule;
+
 #if MONO
 using ScheduleOne.Persistence;
 using ScheduleOne.UI.MainMenu;
@@ -19,7 +21,7 @@ using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 #endif
 
-// Adds a "Load" button to each game slot in the Continue menu
+// Adds a "Restore" button to each game slot in the Continue menu
 // Also creates a sub-menu to allow for selecting which backup to restore
 namespace AutomaticBackups
 {
@@ -31,6 +33,8 @@ namespace AutomaticBackups
         protected Transform continueMenu;               // Menu with save slots (Schedule I's built-in Menu)
         protected Transform loadMenu = null;            // Menu for our list of backups
         protected RestoreBackupScreen restoreBackupScreen = null;
+
+        public ImportScreen importScreen;
 
         void Awake()
         {
@@ -47,9 +51,12 @@ namespace AutomaticBackups
             Transform continueContainer = continueMenu.Find("Container");
             //DestroyImmediate(continueContainer.GetComponent<VerticalLayoutGroup>());
 
-            // Add our "Load" button to each slot            
+            // Add our "Restore" button to each slot            
             for (int i = 0; i < continueContainer.childCount; i++) // Enumerate children in an Il2Cpp-friendly manner
                 AddButtonToSlot(continueContainer.GetChild(i), i);
+
+            // Find the Import Screen
+            importScreen = mainMenu.transform.Find("ImportScreen").GetComponent<ImportScreen>();
 
             // Instantiate scroll view and move all children to it
             /*GameObject scrollView = Instantiate(Core.scrollViewPrefab);
@@ -61,9 +68,6 @@ namespace AutomaticBackups
                 continueContainer.GetChild(i).SetParent(scrollViewContainer, false);
 
             scrollView.transform.SetParent(continue_, false);*/
-
-            // Create the menu that will be displayed if the user clicks one of the "Load" buttons
-            CreateLoadMenu();
         }
 
         void AddButtonToSlot(Transform slot, int slotNumber)
@@ -74,26 +78,25 @@ namespace AutomaticBackups
 
             // Clone export button and modify it to become our Load button
             Transform loadButton = Instantiate(exportButton, info);
-            loadButton.name = "Load";
-
-            // Update position
-            loadButton.localPosition = new Vector3(-215.0f, 20.0f, 0.0f);
-
-            // Update text
-            Transform text = loadButton.GetChild(0);
-            TextMeshProUGUI ugui = text.GetComponent<TextMeshProUGUI>();
-            ugui.text = "Load";
-
-            // Remove Export button component
-            DestroyImmediate(loadButton.GetComponent<SaveExportButton>());
-
+            loadButton.name = "Restore";
             Button button = loadButton.GetComponent<Button>();
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener( new UnityAction( () =>
+            button.onClick.AddListener(new UnityAction(() =>
             {
                 Core.Log("Load button clicked");
                 LoadClicked(slotNumber);
             }));
+
+            // Update position
+            loadButton.localPosition = new Vector3(-215.0f, 20.0f, 0.0f);
+
+            // Update button text
+            Transform text = loadButton.GetChild(0);
+            TextMeshProUGUI ugui = text.GetComponent<TextMeshProUGUI>();
+            ugui.text = "Restore";
+
+            // Remove Schedule I's Export button component
+            DestroyImmediate(loadButton.GetComponent<SaveExportButton>());
         }
 
         public void LoadClicked(int slot)
@@ -131,8 +134,9 @@ namespace AutomaticBackups
             loadMenu.gameObject.SetActive(false);
 
             // Setup our RestoreBackupScreen component
-            restoreBackupScreen = loadMenu.gameObject.AddComponent<RestoreBackupScreen>();            
-            restoreBackupScreen.Initialize(continueMenu.gameObject.GetComponent<ContinueScreen>());
+            restoreBackupScreen = loadMenu.gameObject.AddComponent<RestoreBackupScreen>();
+            MainMenuScreen continueScreen = continueMenu.gameObject.GetComponent<ContinueScreen>();
+            restoreBackupScreen.Initialize(continueScreen);
 
             // Make sure the ScrollView is drawn last
             Transform scrollView = loadMenu.Find("Scroll View");
@@ -164,24 +168,19 @@ namespace AutomaticBackups
             foreach (FileInfo file in files)
             {
                 Core.Log($"Found {file.FullName}");
-                Transform buttonTransform = Instantiate(Core.backupRestoreButtonPrefab.transform, container);
+                Transform buttonParent = Instantiate(Core.backupRestoreButtonPrefab.transform, container);
 
-                // Update the text on the button
-                TextMeshProUGUI text = buttonTransform.GetChild(0).gameObject.AddComponent<TextMeshProUGUI>();
-                text.fontSize = 16;
-                text.color = Color.white;
-                text.alignment = TextAlignmentOptions.Left;
-                text.text = "  " + file.Name;
+                // Update the button with descriptions of the file
+                UpdateButtonText(buttonParent, file);
 
                 // Add click action
-                Button button = buttonTransform.GetComponent<Button>();
+                Button button = buttonParent.GetChild(0).GetComponent<Button>();
                 button.onClick.AddListener(new UnityAction(() =>
                 {
                     Core.Log("File button clicked");
-                    BackupSelected(file);
+                    BackupSelected(file, slot);
                 }));
             }
-
         }
 
         string GetBackupsPath(int slot)
@@ -191,9 +190,87 @@ namespace AutomaticBackups
             return Path.Combine(backupsPath, $"SaveGame_{slot + 1}");
         }
 
-        void BackupSelected(FileInfo file)
+        void UpdateButtonText(Transform buttonParent, FileInfo file)
+        {
+            // Add text for the filename
+            Transform textGO = buttonParent.GetChild(0).GetChild(0);
+            Core.Log($"TextGO: {textGO.name}");
+            TextMeshProUGUI filenameText = textGO.gameObject.AddComponent<TextMeshProUGUI>();
+            filenameText.fontSize = 16;
+            filenameText.color = Color.white;
+            filenameText.alignment = TextAlignmentOptions.Left;
+            filenameText.text = "   " + file.Name;
+
+            // Add "Created" text
+            Transform rightSide = buttonParent.GetChild(0).GetChild(1);
+            Core.Log($"rightSide: {rightSide.name} - {rightSide.ToString()}");
+            Transform child1 = rightSide.GetChild(0);
+            Core.Log($"{child1.name}");
+            TextMeshProUGUI createdText = child1.gameObject.AddComponent<TextMeshProUGUI>();
+            createdText.fontSize = 14;
+            createdText.color = Color.white;
+            createdText.alignment = TextAlignmentOptions.Left;
+            createdText.text = "Created";
+
+            // Add text for creation time
+            Transform child2 = rightSide.GetChild(1);
+            Core.Log($"{child2.name}");
+            TextMeshProUGUI creationTimeText = child2.gameObject.AddComponent<TextMeshProUGUI>();
+            creationTimeText.fontSize = 14;
+            creationTimeText.color = Color.gray;
+            creationTimeText.alignment = TextAlignmentOptions.Left;
+            creationTimeText.text = " " + GetTimeLabel(file);
+        }
+
+        // Adapted from SaveDisplay
+        private string GetTimeLabel(FileInfo file)
+        {
+            // Get the age of the file.
+            // Use the earliest of the creation time or last modification time, for timestamps of copied-and-pasting backups to be identified correctly
+            TimeSpan fileAge = DateTime.Now - file.CreationTime;
+            if (file.LastWriteTimeUtc.Ticks < file.CreationTimeUtc.Ticks)
+                fileAge = DateTime.Now - file.LastWriteTime;
+
+            int hours = Mathf.RoundToInt((float)fileAge.TotalHours);
+            int num = hours / 24;
+            if (num == 0)
+            {
+                if (hours == 0)
+                    return "In the last hour";
+                else if (hours == 1)
+                    return "One hour ago";
+                else
+                    return $"{hours} hours ago";
+            }
+            if (num == 1)
+            {
+                return "Yesterday";
+            }
+            if (num > 365)
+            {
+                return "More than a year ago";
+            }
+            return num.ToString() + " days ago";
+        }
+
+        void BackupSelected(FileInfo file, int slot)
         {
             Core.Log($"Player selected {file.Name}");
+
+            // Initialize the Import Screen confirmation (code adapted from SaveImportButton.Clicked)
+            string text = file.FullName;
+            if (!string.IsNullOrEmpty(text))
+            {
+                string tempImportPath = SaveImportButton.TempImportPath;
+                if (Directory.Exists(tempImportPath))
+                {
+                    Directory.Delete(tempImportPath, true);
+                }
+                SaveImportButton.UnzipSaveFile(text, tempImportPath);
+                importScreen.Initialize(slot, continueMenu.gameObject.GetComponent<ContinueScreen>());
+                restoreBackupScreen.Close(false);
+                importScreen.Open(true);
+            }
         }
     }
 }

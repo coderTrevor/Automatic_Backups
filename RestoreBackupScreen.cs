@@ -6,6 +6,10 @@ using UnityEngine.Events;
 using System.Reflection;
 using ScheduleOne.Tools;
 using ScheduleOne.DevUtilities;
+using ScheduleOne.Audio;
+
+using ScheduleOne;
+
 
 
 #if MONO
@@ -27,9 +31,14 @@ namespace AutomaticBackups
     [RegisterTypeInIl2Cpp]
     public class RestoreBackupScreen : MainMenuScreen
     {
+        private RectTransform Rect;
+
         protected override void Awake()
         {
-            OpenOnStart = false;
+            OpenOnStart = true;
+            this.Group = gameObject.GetComponent<CanvasGroup>();
+            this.Rect = base.GetComponent<RectTransform>();
+
             base.Awake();
         }
 
