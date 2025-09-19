@@ -83,7 +83,6 @@ namespace AutomaticBackups
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(new UnityAction(() =>
             {
-                Core.Log("Load button clicked");
                 LoadClicked(slotNumber);
             }));
 
@@ -101,8 +100,6 @@ namespace AutomaticBackups
 
         public void LoadClicked(int slot)
         {
-            Core.Log($"Slot {slot} was clicked.");
-
             if (!loadMenu)
                 CreateLoadMenu();
             
@@ -148,14 +145,12 @@ namespace AutomaticBackups
         {
             // Get the scroll container
             Transform container = loadMenu.Find("Scroll View").Find("Viewport").Find("Content");
-            Core.Log($"Container: {container.name}");
 
             // Remove any buttons that might have been added
             SettingsMenuMod.DestroyAllChildren(container);
 
             // Get the backup path for the given slot and ensure it exists
             string backupsPath = GetBackupsPath(slot);
-            Core.Log(backupsPath);
             if (!Directory.Exists(backupsPath))
             {
                 Core.Log($"No backups folder found at {backupsPath}");
@@ -167,7 +162,6 @@ namespace AutomaticBackups
             var files = dirInfo.GetFiles("*.zip").OrderBy(f => Math.Min(f.CreationTimeUtc.Ticks, f.LastWriteTimeUtc.Ticks));
             foreach (FileInfo file in files)
             {
-                Core.Log($"Found {file.FullName}");
                 Transform buttonParent = Instantiate(Core.backupRestoreButtonPrefab.transform, container);
 
                 // Update the button with descriptions of the file
@@ -177,7 +171,6 @@ namespace AutomaticBackups
                 Button button = buttonParent.GetChild(0).GetComponent<Button>();
                 button.onClick.AddListener(new UnityAction(() =>
                 {
-                    Core.Log("File button clicked");
                     BackupSelected(file, slot);
                 }));
             }
@@ -194,7 +187,6 @@ namespace AutomaticBackups
         {
             // Add text for the filename
             Transform textGO = buttonParent.GetChild(0).GetChild(0);
-            Core.Log($"TextGO: {textGO.name}");
             TextMeshProUGUI filenameText = textGO.gameObject.AddComponent<TextMeshProUGUI>();
             filenameText.fontSize = 16;
             filenameText.color = Color.white;
@@ -203,9 +195,7 @@ namespace AutomaticBackups
 
             // Add "Created" text
             Transform rightSide = buttonParent.GetChild(0).GetChild(1);
-            Core.Log($"rightSide: {rightSide.name} - {rightSide.ToString()}");
             Transform child1 = rightSide.GetChild(0);
-            Core.Log($"{child1.name}");
             TextMeshProUGUI createdText = child1.gameObject.AddComponent<TextMeshProUGUI>();
             createdText.fontSize = 14;
             createdText.color = Color.white;
@@ -214,7 +204,6 @@ namespace AutomaticBackups
 
             // Add text for creation time
             Transform child2 = rightSide.GetChild(1);
-            Core.Log($"{child2.name}");
             TextMeshProUGUI creationTimeText = child2.gameObject.AddComponent<TextMeshProUGUI>();
             creationTimeText.fontSize = 14;
             creationTimeText.color = Color.gray;
