@@ -23,7 +23,7 @@ namespace AutomaticBackups
     // Allows us to add a category to the Settings display with our mod's settings
     // We need a MonoBehavior so we can clone existing objects in the scene hierarchy (I don't know how to do this outside of a MonoBehavior)
     [RegisterTypeInIl2Cpp]
-    public class MenuMod : MonoBehaviour
+    public class SettingsMenuMod : MonoBehaviour
     {
         void Awake()
         {
@@ -142,7 +142,7 @@ namespace AutomaticBackups
         }
 
         // Destroys all children of a given Transform
-        void DestroyAllChildren(Transform parent)
+        public static void DestroyAllChildren(Transform parent)
         {
             // Iterate backwards to avoid issues while modifying the hierarchy
             for (int i = parent.childCount - 1; i >= 0; i--)
