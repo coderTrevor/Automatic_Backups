@@ -36,10 +36,8 @@ namespace AutomaticBackups
             if (__instance.gameObject.name != "RestoreBackup")
                 return;
 
-            Core.Log($"Awake() called on {__instance.gameObject.name}");
             // Assign values that would normally be set in the Unity Editor
             __instance.OpenOnStart = true;
-            Core.Log($"Assigning continue screen: {ContinueMenuMod.continueScreen}");
             __instance.PreviousScreen = ContinueMenuMod.continueScreen;
             __instance.Group = __instance.gameObject.GetComponent<CanvasGroup>();
         }
@@ -190,20 +188,26 @@ namespace AutomaticBackups
             {
                 Transform buttonParent = Instantiate(Core.backupRestoreButtonPrefab.transform, container);
 
+                // Get the age of the file.
+                // Use the earliest of the creation time or last modification time, for timestamps of copied-and-pasting backups to be identified correctly
+                TimeSpan fileAge = DateTime.Now - file.CreationTime;
+                if (file.LastWriteTimeUtc.Ticks < file.CreationTimeUtc.Ticks)
+                    fileAge = DateTime.Now - file.LastWriteTime;
+
                 // Update the button with descriptions of the file
-                UpdateButtonText(buttonParent, file);
+                UpdateButtonText(buttonParent, file.Name, fileAge);
 
                 // Add click action
                 Button button = buttonParent.GetChild(0).GetComponent<Button>();
 #if MONO
                 button.onClick.AddListener(new UnityAction(() =>
                 {
-                    BackupSelected(file, slot);
+                    BackupSelected(file.FullName, slot);
                 }));
 #else
                 button.onClick.AddListener(new Action(() =>
                 {
-                    BackupSelected(file, slot);
+                    BackupSelected(file.FullName, slot);
                 }));
 #endif
             }
@@ -216,7 +220,7 @@ namespace AutomaticBackups
             return Path.Combine(backupsPath, $"SaveGame_{slot + 1}");
         }
 
-        void UpdateButtonText(Transform buttonParent, FileInfo file)
+        void UpdateButtonText(Transform buttonParent, string fileName, TimeSpan fileAge)
         {
             // Add text for the filename
             Transform textGO = buttonParent.GetChild(0).GetChild(0);
@@ -224,7 +228,7 @@ namespace AutomaticBackups
             filenameText.fontSize = 16;
             filenameText.color = Color.white;
             filenameText.alignment = TextAlignmentOptions.Left;
-            filenameText.text = "   " + file.Name;
+            filenameText.text = "   " + fileName;
 
             // Add "Created" text
             Transform rightSide = buttonParent.GetChild(0).GetChild(1);
@@ -241,18 +245,12 @@ namespace AutomaticBackups
             creationTimeText.fontSize = 14;
             creationTimeText.color = Color.gray;
             creationTimeText.alignment = TextAlignmentOptions.Left;
-            creationTimeText.text = " " + GetTimeLabel(file);
+            creationTimeText.text = " " + TimeLabel(fileAge);
         }
 
         // Adapted from SaveDisplay
-        private string GetTimeLabel(FileInfo file)
+        private string TimeLabel(TimeSpan fileAge)
         {
-            // Get the age of the file.
-            // Use the earliest of the creation time or last modification time, for timestamps of copied-and-pasting backups to be identified correctly
-            TimeSpan fileAge = DateTime.Now - file.CreationTime;
-            if (file.LastWriteTimeUtc.Ticks < file.CreationTimeUtc.Ticks)
-                fileAge = DateTime.Now - file.LastWriteTime;
-
             int hours = Mathf.RoundToInt((float)fileAge.TotalHours);
             int num = hours / 24;
             if (num == 0)
@@ -275,12 +273,10 @@ namespace AutomaticBackups
             return num.ToString() + " days ago";
         }
 
-        void BackupSelected(FileInfo file, int slot)
+        void BackupSelected(string fileName, int slot)
         {
-            Core.Log($"Player selected {file.Name}");
-
             // Initialize the Import Screen confirmation (code adapted from SaveImportButton.Clicked)
-            string text = file.FullName;
+            string text = fileName;
             if (!string.IsNullOrEmpty(text))
             {
                 string tempImportPath = SaveImportButton.TempImportPath;
