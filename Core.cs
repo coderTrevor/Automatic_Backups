@@ -23,7 +23,7 @@ using FishNet;
     // Other configs could go here
 #endif
 
-[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.2.0-beta", "coderTrevor", null)]
+[assembly: MelonInfo(typeof(AutomaticBackups.Core), "AutomaticBackups", "1.3.0-beta", "coderTrevor", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 #if MONO
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.MONO)]

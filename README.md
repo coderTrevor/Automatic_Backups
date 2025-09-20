@@ -14,11 +14,13 @@ There are builds for both the main (IL2Cpp) and alternate (Mono) branches of the
 
 # Usage
 Every time you save your game, this mod exports your save to a timestamped .zip file.
-These files can be found alongside your other saves in a folder called `Backups`. To load a previous save, just
-select `Import` on the `Continue` screen in Schedule I and navigate to that folder.
+  
+To load a previous save, just click `Restore` on the `Continue` screen in Schedule I and select the backup you want to restore.
 
 Notes:
 - Backups are local only and not synced with the Steam cloud.
+- Backups can also be loaded with the `import` button on the continue screen if you want to load them in a different save slot.
+They can be found alongside your other saves in a folder called `Backups`.
 - Untested in Mac or Linux
 
 # Settings
@@ -36,7 +38,7 @@ When you first load a save slot, you can check the MelonLoader console to see ho
 ### AutoSave
 The mod can automatically save your progress if some amount of time passes since your last save. The timer resets on every save.  
 
-Auto-saves are also backed up. The filenames are prepended with "auto_" so it's easy to find and import your last manual save if you'd like.
+Auto-saves are also backed up. The filenames are prepended with "auto_" so it's easy to find and restore your last manual save if you'd like.
 
 By default, autosaving is enabled and the timer is set to 10 minutes. You can enable or disable this feature and adjust the time before saving anywhere between 1 and 60 minutes.
 
@@ -46,4 +48,5 @@ Consider giving this mod a thumbs-up on [Thunderstore](https://thunderstore.io/c
 ## Acknowledgements
 Mod boilerplate was created with the [MelonLoader.VSWizard](https://github.com/TrevTV/MelonLoader.VSWizard) wizard by TrevTV with additions from the [S1MONO_IL2CPP_Template](https://github.com/weedeej/S1MONO_IL2CPP_Template) template by weedeej.
 
-Thanks to [ifBars](https://github.com/ifBars) who helped me diagnose an Il2Cpp-specific issue.
+Thanks to [ifBars](https://github.com/ifBars) who helped me diagnose an Il2Cpp-specific issue,
+and other users on the [Schedule I modding Discord](https://discord.gg/BK9fMnCb) for general help and encouragement.

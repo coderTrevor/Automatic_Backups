@@ -1,7 +1,7 @@
 {
   "name": "Automatic_Backups",
   "description": "Automatically backs-up your save files every time you save. Allows you to recover from disaster! It can autosave, also.",
-  "version_number": "1.2.1",
+  "version_number": "1.3.0",
   "dependencies": [
     "LavaGang-MelonLoader-0.7.0"
   ],
