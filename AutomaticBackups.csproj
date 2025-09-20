@@ -952,7 +952,6 @@
 	<ItemGroup>
 		<Compile Include="AutoSaveToggle.cs" />
 		<Compile Include="AutoSaveTimeSlider.cs" />
-		<Compile Include="RestoreBackupScreen.cs" />
 		<Compile Include="RetentionAmountSlider.cs" />
 		<Compile Include="ContinueMenuMod.cs" />
 		<Compile Include="SettingsMenuMod.cs" />

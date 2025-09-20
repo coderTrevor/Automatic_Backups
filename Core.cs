@@ -68,7 +68,11 @@ namespace AutomaticBackups
         protected static bool autoSaving = false; // If the Save() call was made by autosave
         protected static bool inMainScene = false;
 
+#if MONO
         public AssetBundle assetBundle = null;
+#else
+        public Il2CppAssetBundle assetBundle = null;
+#endif
         public static GameObject scrollViewPrefab = null;
         public static GameObject backupRestorePanelPrefab = null;
         public static GameObject backupRestoreButtonPrefab = null;
@@ -93,7 +97,7 @@ namespace AutomaticBackups
             autoSaveTime = autoSaveCategory.CreateEntry<int>("autoSaveTime", DEFAULT_SAVE_TIME);
 
 
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AutomaticBackups.scrollview"); // Get the AssetBundle Stream
+            Stream stream = MelonAssembly.Assembly.GetManifestResourceStream("AutomaticBackups.scrollview"); // Get the AssetBundle Stream
             if (stream == null) // If it doesn't exist...
             {
                 LoggerInstance.Msg("Failed to load scrollview asset bundle!");
@@ -102,7 +106,19 @@ namespace AutomaticBackups
             else
                 LoggerInstance.Msg("Loaded asset bundle from stream: " + stream + " CanRead: " + stream.CanRead + " CanSeek: " + stream.CanSeek);
 
-            assetBundle = AssetBundle.LoadFromStream(stream); // Load the AssetBundle from the Stream
+            // Load the AssetBundle from the Stream
+#if IL2CPP
+            byte[] bundleData;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    stream.CopyTo(ms);
+                    bundleData = ms.ToArray();
+                }
+                Il2CppSystem.IO.Stream IlStream = new Il2CppSystem.IO.MemoryStream(bundleData);
+                assetBundle = Il2CppAssetBundleManager.LoadFromStream(IlStream);
+#else
+            assetBundle = AssetBundle.LoadFromStream(stream);
+#endif
             if (assetBundle == null)
             {
                 LoggerInstance.Msg("Failed to load asset bundle");
@@ -111,6 +127,9 @@ namespace AutomaticBackups
             else
                 LoggerInstance.Msg("Loaded asset bundle: " + assetBundle);
             stream.Close(); // Close it to remove it from RAM (saves system resources!)
+#if IL2CPP
+            IlStream.Close();
+#endif
 
             string[] strings = assetBundle.GetAllAssetNames();
             foreach (string s in strings)
@@ -164,6 +183,8 @@ namespace AutomaticBackups
             {
                 // Add our SettingsMenuMod MonoBehavior to the MainMenu object
                 GameObject mainMenu = GameObject.Find("MainMenu");
+                // TEMP
+                //GameObject.Find("DisclaimerCanvas").gameObject.SetActive(false);
                 if (mainMenu.GetComponent<SettingsMenuMod>())
                 {
                     Log($"Backups menu has already been created.");

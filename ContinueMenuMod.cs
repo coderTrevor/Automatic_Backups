@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Reflection;
-using static MelonLoader.Modules.MelonModule;
 
 #if MONO
 using ScheduleOne.Persistence;
@@ -17,6 +16,7 @@ using Il2CppTMPro;
 using Il2CppScheduleOne.Persistence;
 using Il2CppScheduleOne.UI.MainMenu;
 using Il2CppScheduleOne.UI.Settings;
+using Il2CppScheduleOne.DevUtilities;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 #endif
@@ -25,6 +25,26 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 // Also creates a sub-menu to allow for selecting which backup to restore
 namespace AutomaticBackups
 {
+    // Subclassing MainMenuScreen wasn't working for Il2Cpp
+    // So to support our custom menu screen for restoreBackupScreeen, we'll instead create an instance of MainMenuScreen itself and patch it
+    [HarmonyPatch(typeof(MainMenuScreen), "Awake")]
+    static class MainMenuScreenPatch
+    {        
+        public static void Prefix(MainMenuScreen __instance)
+        {
+            // We only care about our "RestoreBackup" object
+            if (__instance.gameObject.name != "RestoreBackup")
+                return;
+
+            Core.Log($"Awake() called on {__instance.gameObject.name}");
+            // Assign values that would normally be set in the Unity Editor
+            __instance.OpenOnStart = true;
+            Core.Log($"Assigning continue screen: {ContinueMenuMod.continueScreen}");
+            __instance.PreviousScreen = ContinueMenuMod.continueScreen;
+            __instance.Group = __instance.gameObject.GetComponent<CanvasGroup>();
+        }
+    }
+
     // Allows us to modify the Continue menu
     // We need a MonoBehavior so we can clone existing objects in the scene hierarchy (I don't know how to do this outside of a MonoBehavior)
     [RegisterTypeInIl2Cpp]
@@ -32,8 +52,8 @@ namespace AutomaticBackups
     {
         protected Transform continueMenu;               // Menu with save slots (Schedule I's built-in Menu)
         protected Transform loadMenu = null;            // Menu for our list of backups
-        protected RestoreBackupScreen restoreBackupScreen = null;
-
+        protected MainMenuScreen restoreBackupScreen = null;
+        static public ContinueScreen continueScreen = null;
         public ImportScreen importScreen;
 
         void Awake()
@@ -48,6 +68,7 @@ namespace AutomaticBackups
 
             // Continue object will be a child of MainMenu
             continueMenu = mainMenu.transform.Find("Continue");
+            continueScreen = continueMenu.GetComponent<ContinueScreen>();
             Transform continueContainer = continueMenu.Find("Container");
             //DestroyImmediate(continueContainer.GetComponent<VerticalLayoutGroup>());
 
@@ -81,10 +102,17 @@ namespace AutomaticBackups
             loadButton.name = "Restore";
             Button button = loadButton.GetComponent<Button>();
             button.onClick.RemoveAllListeners();
+#if MONO
             button.onClick.AddListener(new UnityAction(() =>
             {
                 LoadClicked(slotNumber);
             }));
+#else
+            button.onClick.AddListener(new Action(() =>
+            {
+                LoadClicked(slotNumber);
+            }));
+#endif
 
             // Update position
             loadButton.localPosition = new Vector3(-215.0f, 20.0f, 0.0f);
@@ -130,10 +158,8 @@ namespace AutomaticBackups
             loadMenu.name = "RestoreBackup";
             loadMenu.gameObject.SetActive(false);
 
-            // Setup our RestoreBackupScreen component
-            restoreBackupScreen = loadMenu.gameObject.AddComponent<RestoreBackupScreen>();
-            MainMenuScreen continueScreen = continueMenu.gameObject.GetComponent<ContinueScreen>();
-            restoreBackupScreen.Initialize(continueScreen);
+            // Setup our restoreBackupScreen component
+            restoreBackupScreen = loadMenu.gameObject.AddComponent<MainMenuScreen>();
 
             // Make sure the ScrollView is drawn last
             Transform scrollView = loadMenu.Find("Scroll View");
@@ -169,10 +195,17 @@ namespace AutomaticBackups
 
                 // Add click action
                 Button button = buttonParent.GetChild(0).GetComponent<Button>();
+#if MONO
                 button.onClick.AddListener(new UnityAction(() =>
                 {
                     BackupSelected(file, slot);
                 }));
+#else
+                button.onClick.AddListener(new Action(() =>
+                {
+                    BackupSelected(file, slot);
+                }));
+#endif
             }
         }
 
